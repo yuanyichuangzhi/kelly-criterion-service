@@ -1,6 +1,8 @@
 import logging
+from functools import lru_cache
+import pkg_resources
 
-from flask import Flask, redirect
+from flask import Flask, redirect, Response
 from flasgger import Swagger
 
 from .kelly_criterion_view import KellyCriterionView
@@ -10,9 +12,18 @@ from .config import SWAGGER_CONFIG
 log = logging.getLogger(__name__)
 
 
+@lru_cache(maxsize=1)
+def tos():
+    license = \
+        pkg_resources.resource_string(__name__, '../LICENSE')
+    return Response(license, mimetype='text/plain')
+
+
 def create_endpoints(flask_app: Flask) -> None:
     log.info("Creating API Endpoints")
     flask_app.add_url_rule('/', 'index', lambda: redirect('apidocs'))
+
+    flask_app.add_url_rule('/tos', 'tos', tos)
 
     flask_app.add_url_rule(
         '/v1/kelly_criterion',
