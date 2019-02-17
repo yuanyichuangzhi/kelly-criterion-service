@@ -19,14 +19,14 @@ def _validate_date(input_date: str) -> bool:
 
 class KellyCriterionRequest(Schema):  # type: ignore
     start_date = fields.Str(
-        description='Start date',
+        description='Start date of the sampling period',
         example='2018-1-1',
         default='',
         required=True,
         validate=_validate_date)
 
     end_date = fields.Str(
-        description='End date',
+        description='End date of the sampling period',
         example='2018-12-31',
         default='',
         required=True,
@@ -34,7 +34,7 @@ class KellyCriterionRequest(Schema):  # type: ignore
 
     securities = fields.List(
         description='List of securities (stock symbols) to calculate '
-                    'leverage for the given date range ',
+                    'the leverage using the given sampling period.',
         example=['IBM', 'AAPL'],
         default=[],
         cls_or_instance=fields.Str())
@@ -46,25 +46,49 @@ class KellyCriterionRequest(Schema):  # type: ignore
 
 
 class KellyCriterionResponse(Schema):  # type: ignore
-    job_names = fields.List(cls_or_instance=fields.Str())
+    kelly_leverages = fields.Dict(
+        keys=fields.Str(description='Security'),
+        values=fields.Float(description='Optimal Kelly Leverage'))
 
 
 class KellyCriterionView(SwaggerView):  # type: ignore
+    summary = "Kelly Criterion for Stock Market"
+    description = """
+    Money management strategy based on Kelly J. L.'s formula described in 
+    "A New Interpretation of Information Rate". 
+    The formula was adopted to gambling and stock market by Ed Thorp, et al., 
+    see: The Kelly Criterion in Blackjack Sports Betting, and the Stock Market.
+
+    This service calculates the optimal capital allocation for the provided 
+    portfolio of securities with the formula:
+        f_i = m_i / s_i^2
+    where
+        * f_i is the calculated leverage of the i-th security of the portfolio
+        * m_i is the mean of the return of the i-th security
+        * s_i is the standard deviation of the return of the i-th security
+    assuming that the strategies for the securities are all statistically 
+    independent.
+
+    The stock quotes are downloaded from IEX Exchange. 
+    
+    Reference (Matlab) implementation was taken from Ernie Chan's 
+    Quantitative Trading book (ISBN 978-0470284889).
+    """
     tags = ['kelly_criterion']
     parameters = KellyCriterionRequest
     responses = {
         200: {
-            'description': "Kelly Leverages",
+            'description': "Optimal leverages based on Kelly's Criterion",
             'schema': KellyCriterionResponse
         },
-        400: {'description': 'Error occured while serving the request.'}
+        400: {'description': 'Error occurred while serving the request.'}
     }
     validation = True
 
     # pylint: disable=no-self-use
     def post(self) -> Response:
         """
-        Kelly Leverage calculation
+        Optimal leverage calculation using Kelly Criterion
         """
         try:
             params = KellyCriterionRequest().load(request.json)
