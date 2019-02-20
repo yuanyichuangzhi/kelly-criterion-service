@@ -6,7 +6,7 @@ The formula was adopted to gambling and stock market by Ed Thorp, et al., see:
 
 This service calculates the optimal capital allocation for the provided portfolio of securities with the formula:
 
-`f_i = m_i / s_i^2`
+![f_i = m_i / s_i^2](https://latex.codecogs.com/gif.latex?f_i%3Dm_i/s_i%5E2)
 
 where
   * `f_i` is the calculated leverage of the i-th security from the portfolio
